@@ -107,9 +107,7 @@ Aujourd'hui, l'exercice n'étant seulement "une reponse" à un appel d'offre, je
 
 ## Notation
 
-La note sera composée en deux partie. 
-- Une première qui notera uniquement le projet. Je pars du principe que vous êtes des entreprises capables de repondre à mon besoin et que vous me fournissez un maquette / POC qui permet de repondre à mon appel d'offre. En fonction de ce que vous me présenterez, ergonomie, fonctionnalité implémenté, features innovantes (**soyez créatif**), code bien versionné, documentation qualitative... la note restera à 20 ou descendra petit à petit.
-- Une deuxième partie sera _les points bonnus_ qui proviennent des TPs (ceux après le TP3). La notation de ces derniers se fera en classe début décembre.
+Je pars du principe que vous êtes des entreprises capables de repondre à mon besoin et que vous me fournissez un maquette / POC qui permet de repondre à mon appel d'offre. En fonction de ce que vous me présenterez, ergonomie, fonctionnalité implémenté, features innovantes (**soyez créatif**), code bien versionné, documentation qualitative... la note restera à 20 ou descendra petit à petit.
 
 ---
 
