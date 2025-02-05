@@ -92,7 +92,7 @@ Dans deux terminaux différents:
 Il vous faudra forker le projet un seul fois par équipe (un seul membre fork le projet) puis chacun `clone` le repository.
 
 Le repo devra prendre cette forme de nommage :<br/>
-**`prj-pei-tw-2023-01-<nom_1>-<nom_2>`**
+**`prj-create-tw-2024-01-<nom_1>-<nom_2>`**
 
 Enfin vous travaillerez en _**`feature branch`**_ à vous de vous documentez sur la chose.
 
