@@ -7,6 +7,8 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const sensors = await Sensor.find();
+        console.log('Sensors found:', sensors.length);
+        console.log('Sensor collection name:', Sensor.collection.name);
         res.json(sensors);
     } catch (error) {
         res.status(500).json({ error: error.message });

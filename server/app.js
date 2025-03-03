@@ -15,9 +15,10 @@ const app = express();
 const port = 31356;
 
 const db_uri = process.env.DB_URI;
+const db_name = process.env.DB_NAME;
 
-mongoose.connect(db_uri)
-  .then(() => console.log('DB Connected'))
+mongoose.connect(db_uri, { dbName: db_name })
+  .then(() => console.log(db_name, 'Connected'))
   .catch(err => console.log('DB Connection Error:', err));
 
 // Middlewares
