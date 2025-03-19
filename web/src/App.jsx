@@ -13,7 +13,7 @@ function App() {
         height: "100vh",
       }}
     >
-      <h1 style={{ marginTop: "auto" }}>Let's Start !</h1>
+      <h1 className="text-3xl font-bold underline"style={{ marginTop: "auto" }}>Let's Start !</h1>
       <img src={logo} alt="react_logo" style={{ marginBottom: "auto" }} />
     </div>
   );
