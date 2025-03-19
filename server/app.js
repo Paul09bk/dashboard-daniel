@@ -1,4 +1,3 @@
-//// filepath: /C:/GitLab-repo/prj-create-tw-2024-01-fromentin-vachez/server/app.js
 import express from "express";
 import mongoose from "mongoose";
 import morgan from "morgan";
