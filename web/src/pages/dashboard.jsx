@@ -4,6 +4,7 @@ import Map from '../components/dashboard/Map';
 // import Charts from '../components/dashboard/Charts';
 import UsersList from '../components/dashboard/UsersList';
 import MeasuresList from '../components/dashboard/MeasuresList';
+import MapWidget from '../components/MapWidget/MapWidget';
 // import { fetchDashboardData } from '../services/api';
 
 const DashboardPage = () => {
@@ -67,7 +68,7 @@ const DashboardPage = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <Map />
+          <MapWidget />
         </div>
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <UsersList />

@@ -2,13 +2,17 @@ import express from "express";
 import mongoose from "mongoose";
 import morgan from "morgan";
 import dotenv from "dotenv";
+import cors from "cors"; // Ajout de l'import CORS
 
 // Importation des routes
 import userRoutes from "./routes/users.js";
 import sensorRoutes from "./routes/sensors.js";
 import measureRoutes from "./routes/measures.js";
+//import Dashboard from "../web/src/components/Dashboard/Dashboard.jsx";
+
 
 dotenv.config();
+
 
 const app = express();
 const port = 31356;
@@ -21,6 +25,7 @@ mongoose.connect(db_uri, { dbName: db_name })
   .catch(err => console.log('DB Connection Error:', err));
 
 // Middlewares
+app.use(cors()); // Ajout du middleware CORS
 app.use(express.json());
 app.use(morgan("dev"));
 
