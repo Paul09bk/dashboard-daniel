@@ -1,30 +1,7 @@
-/* eslint-disable react/prop-types */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import PropTypes from 'prop-types';
 import createGlobe from "cobe";
-
-// Données utilisateurs directes (sans appel API)
-const usersData = [
-  {"location":"ethiopia","personsInHouse":4,"houseSize":"medium"},
-  {"location":"czech republic","personsInHouse":6,"houseSize":"small"},
-  {"location":"italy","personsInHouse":2,"houseSize":"big"},
-  {"location":"greece","personsInHouse":4,"houseSize":"medium"},
-  {"location":"china","personsInHouse":5,"houseSize":"medium"},
-  {"location":"poland","personsInHouse":4,"houseSize":"big"},
-  {"location":"thailand","personsInHouse":1,"houseSize":"medium"},
-  {"location":"china","personsInHouse":5,"houseSize":"small"},
-  {"location":"morocco","personsInHouse":3,"houseSize":"big"},
-  {"location":"china","personsInHouse":1,"houseSize":"big"},
-  {"location":"malaysia","personsInHouse":1,"houseSize":"medium"},
-  {"location":"slovenia","personsInHouse":2,"houseSize":"small"},
-  {"location":"philippines","personsInHouse":5,"houseSize":"medium"},
-  {"location":"mexico","personsInHouse":3,"houseSize":"big"},
-  {"location":"ecuador","personsInHouse":2,"houseSize":"big"},
-  {"location":"china","personsInHouse":6,"houseSize":"big"},
-  {"location":"albania","personsInHouse":6,"houseSize":"medium"},
-  {"location":"japan","personsInHouse":2,"houseSize":"small"},
-  {"location":"peru","personsInHouse":2,"houseSize":"small"},
-  {"location":"russia","personsInHouse":5,"houseSize":"medium"}
-];
+import { fetchSensorLocations } from "../../services/apiService";
 
 // Coordonnées géographiques des pays
 const countryCoordinates = {
@@ -47,44 +24,84 @@ const countryCoordinates = {
   'thailand': [15.87, 100.9925],
 };
 
-// Transformer les données utilisateurs en marqueurs pour le globe
-const transformUsersToMarkers = (users) => {
+// Transformer les données des capteurs en marqueurs pour le globe
+const transformSensorsToMarkers = (sensors) => {
+  const locationCounts = new Map();
+  
+  // Compter les capteurs par emplacement
+  sensors.forEach(sensor => {
+    if (!sensor.userLocation) return;
+    
+    const location = sensor.userLocation.toLowerCase();
+    if (!locationCounts.has(location)) {
+      locationCounts.set(location, 1);
+    } else {
+      locationCounts.set(location, locationCounts.get(location) + 1);
+    }
+  });
+  
+  // Créer les marqueurs
   const markers = [];
-  const seenLocations = new Set(); // Pour éviter les doublons de localisation
-
-  users.forEach(user => {
-    const location = user.location.toLowerCase();
+  
+  locationCounts.forEach((count, location) => {
     const coordinates = countryCoordinates[location];
     
-    if (coordinates && !seenLocations.has(location)) {
-      // Calculer la taille du marqueur basée sur le nombre de personnes
+    if (coordinates) {
+      // Calculer la taille du marqueur basée sur le nombre de capteurs
       // (entre 0.03 et 0.1)
-      const size = Math.min(0.03 + (user.personsInHouse / 10) * 0.07, 0.1);
+      const size = Math.min(0.03 + (count / 5) * 0.07, 0.1);
       
       markers.push({
         location: coordinates,
         size,
       });
-      
-      seenLocations.add(location);
     }
   });
   
   return markers;
 };
 
-const Globe = ({ className = '' }) => {
+const Globe = ({ className = '', miniGlobe = false }) => {
   const canvasRef = useRef(null);
   const pointerInteracting = useRef(null);
   const pointerInteractionMovement = useRef(0);
-  // Stocker phi dans un useRef pour conserver sa valeur entre les rendus
   const phiRef = useRef(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sensors, setSensors] = useState([]);
+  const [sensorCount, setSensorCount] = useState(0);
+  const dataFetchedRef = useRef(false);
 
+  // Récupérer les données des capteurs
   useEffect(() => {
-    // Convertir les données utilisateurs en marqueurs
-    const markers = transformUsersToMarkers(usersData);
+    if (dataFetchedRef.current) return;
+    dataFetchedRef.current = true;
     
-    let animationFrameId;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        const data = await fetchSensorLocations();
+        setSensors(data);
+        setSensorCount(data.length);
+        setLoading(false);
+      } catch (err) {
+        console.error("Globe: Error fetching data:", err);
+        setError("Impossible de charger les données des capteurs.");
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+
+  // Initialiser le globe avec les données
+  useEffect(() => {
+    if (loading || error || !sensors.length) return;
+    
+    // Convertir les données des capteurs en marqueurs
+    const markers = transformSensorsToMarkers(sensors);
+    
     let globe;
     
     // Cette fonction crée le globe avec une taille adaptée au conteneur
@@ -101,7 +118,10 @@ const Globe = ({ className = '' }) => {
         canvasRef.current.width = size;
         canvasRef.current.height = size;
         
-        // Création du globe
+        // Configuration ajustée en fonction du mode miniGlobe
+        const rotationSpeed = miniGlobe ? 0.01 : 0.005;
+        
+        // Création du globe avec meilleur contraste des continents
         globe = createGlobe(canvasRef.current, {
           devicePixelRatio: window.devicePixelRatio || 1,
           width: size,
@@ -109,17 +129,18 @@ const Globe = ({ className = '' }) => {
           phi: 0,
           theta: 0.3,
           dark: 0,
-          diffuse: 1.2,
-          mapSamples: 16000,
-          mapBrightness: 1.2,
-          baseColor: [1, 1, 1],
-          markerColor: [0.98, 0.39, 0.07], // Orange PE.IoT
+          diffuse: 1.5,               // Augmenté pour plus de contraste
+          mapSamples: miniGlobe ? 8000 : 16000,
+          mapBrightness: 2.0,         // Augmenté pour rendre les continents plus visibles
+          baseColor: [0.8, 0.8, 0.8], // Assombri pour meilleur contraste
+          markerColor: [0.98, 0.39, 0.07],
           glowColor: [1, 1, 1],
-          markers,
+          markers: miniGlobe ? [] : markers,
+          opacity: 1.0,               // Opacité maximale
           onRender: (state) => {
-            // Rotation automatique
+            // Rotation automatique plus rapide pour le mini-globe
             if (!pointerInteracting.current) {
-              phiRef.current += 0.008;
+              phiRef.current += rotationSpeed;
             }
             state.phi = phiRef.current;
           }
@@ -150,14 +171,18 @@ const Globe = ({ className = '' }) => {
         globe.destroy();
       }
       window.removeEventListener('resize', handleResize);
-      window.cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [sensors, loading, error, miniGlobe]);
 
   // Gestion des interactions avec la souris/tactile
   const updatePointerInteraction = (clientX) => {
+    // Désactiver l'interaction si c'est un mini-globe
+    if (miniGlobe) return;
+    
     pointerInteracting.current = clientX;
-    canvasRef.current.style.cursor = clientX ? "grabbing" : "grab";
+    if (canvasRef.current) {
+      canvasRef.current.style.cursor = clientX ? "grabbing" : "grab";
+    }
   };
 
   const onPointerDown = (e) => {
@@ -180,6 +205,59 @@ const Globe = ({ className = '' }) => {
     }
   };
 
+  // Afficher un message de chargement ou d'erreur si nécessaire (sauf en mode mini)
+  if (loading && !miniGlobe) {
+    return (
+      <div className={`flex items-center justify-center h-full ${className}`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mb-3"></div>
+          <p className="text-gray-600">Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !miniGlobe) {
+    return (
+      <div className={`flex items-center justify-center h-full ${className}`}>
+        <div className="text-center p-4">
+          <p className="text-red-500 font-bold mb-2">Erreur</p>
+          <p className="text-gray-700">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Exposer le nombre de capteurs au parent
+  if (typeof window !== 'undefined') {
+    window.sensorCount = sensorCount;
+  }
+
+  // Pour le mini-globe, utiliser un style plus compact
+  if (miniGlobe) {
+    return (
+      <div className={`${className}`}>
+        <div className="relative aspect-square h-full w-full">
+          <canvas
+            ref={canvasRef}
+            className="h-full w-full opacity-0 transition-opacity duration-500"
+            style={{ 
+              display: "block",
+              margin: "0 auto"
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Affichage normal du globe
   return (
     <div className={`flex items-center justify-center h-full ${className}`}>
       <div className="relative aspect-square h-full max-h-full">
@@ -199,6 +277,18 @@ const Globe = ({ className = '' }) => {
       </div>
     </div>
   );
+};
+
+// Définition des PropTypes pour résoudre l'erreur ESLint
+Globe.propTypes = {
+  className: PropTypes.string,
+  miniGlobe: PropTypes.bool
+};
+
+// Définition des valeurs par défaut
+Globe.defaultProps = {
+  className: '',
+  miniGlobe: false
 };
 
 export default Globe;
