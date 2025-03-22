@@ -88,3 +88,47 @@ export const fetchSensorLocations = async () => {
     throw error;
   }
 };
+
+// Mise à jour de fetchDetailedMeasures
+export const fetchDetailedMeasures = async (sensorId) => {
+  try {
+    // D'abord récupérer les mesures pour le capteur spécifié
+    const measures = await fetchMeasures({ sensorID: sensorId });
+    
+    // Ensuite récupérer les détails du capteur
+    const sensorResponse = await fetch(`${API_BASE_URL}/sensors/${sensorId}`);
+    if (!sensorResponse.ok) {
+      throw new Error(`Erreur HTTP: ${sensorResponse.status}`);
+    }
+    const sensorDetails = await sensorResponse.json();
+    
+    // Enrichir chaque mesure avec les détails du capteur
+    return measures.map(measure => {
+      // Extraire l'ID réel du capteur si c'est un objet MongoDB
+      const actualSensorId = measure.sensorID && measure.sensorID.$oid 
+        ? measure.sensorID.$oid 
+        : (typeof measure.sensorID === 'string' ? measure.sensorID : sensorId);
+      
+      return {
+        ...measure,
+        // Utiliser les champs existants ou ajouter des valeurs par défaut
+        sensorID: actualSensorId,
+        sensorType: measure.type || sensorDetails.type || "Non spécifié",
+        timestamp: measure.creationDate || measure.timestamp || measure.date,
+        sensorLocation: sensorDetails.location || "Lieu inconnu"
+      };
+    });
+  } catch (error) {
+    console.error(`Erreur lors de la récupération des mesures détaillées pour le capteur ${sensorId}:`, error);
+    
+    // En cas d'erreur, retourner les mesures avec un enrichissement minimal
+    const measures = await fetchMeasures({ sensorID: sensorId });
+    return measures.map(measure => ({
+      ...measure,
+      sensorID: measure.sensorID || sensorId,
+      sensorType: measure.type || "Non spécifié",
+      timestamp: measure.creationDate || measure.timestamp || measure.date,
+      sensorLocation: "Lieu inconnu"
+    }));
+  }
+};

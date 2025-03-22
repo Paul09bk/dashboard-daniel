@@ -43,25 +43,25 @@ const MapWidget = ({ className = '' }) => {
   }, []);
 
   return (
-  <div className={`h-full flex flex-col ${className}`} ref={containerRef}>
-    {/* En-tête du widget */}
-    <div className="flex items-center justify-between p-4 border-b border-gray-200">
-      <h2 className="text-xl font-bold text-gray-800">Localisation des capteurs</h2>
-      <div className="text-sm bg-blue-50 py-1 px-3 rounded-full">
-        <span className="font-medium text-blue-500">
-          {sensorCount} capteurs actifs
-        </span>
+    <div className={`h-[500px] flex flex-col ${className}`} ref={containerRef}>
+      {/* En-tête du widget */}
+      <div className="flex-none flex items-center justify-between p-4 border-b border-gray-200">
+        <h2 className="text-xl font-bold text-gray-800">Localisation des capteurs</h2>
+        <div className="text-sm bg-blue-50 py-1 px-3 rounded-full">
+          <span className="font-medium text-blue-500">
+            {sensorCount} capteurs actifs
+          </span>
+        </div>
+      </div>
+  
+      {/* Contenu principal */}
+      <div className="flex-1 p-4">
+        <div className="relative bg-gray-50 rounded-lg overflow-hidden h-full">
+          <MapBoxComponent className="h-full w-full" />
+        </div>
       </div>
     </div>
-
-    {/* Contenu principal - suppression des hauteurs minimales problématiques */}
-    <div className="flex-1 p-4 flex flex-col">
-      <div className="relative bg-gray-50 rounded-lg overflow-hidden flex-1">
-        <MapBoxComponent className="h-full w-full" />
-      </div>
-    </div>
-  </div>
-);
+  );
 };
 
 // Définition des PropTypes pour résoudre l'erreur ESLint

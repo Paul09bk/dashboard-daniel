@@ -8,6 +8,7 @@ import MapWidget from '../components/MapWidget/MapWidget';
 // import { fetchDashboardData } from '../services/api';
 
 const DashboardPage = () => {
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     capteurs: 500,
     utilisateurs: 300,
@@ -49,6 +50,10 @@ const DashboardPage = () => {
     loadDashboardData();
   }, []);
 
+  const handleUserSelect = (userId) => {
+    setSelectedUserId(userId);
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading dashboard data...</div>;
   }
@@ -71,17 +76,16 @@ const DashboardPage = () => {
           <MapWidget />
         </div>
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <UsersList />
+          <UsersList onUserSelect={handleUserSelect} />
         </div>
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           {/* <Charts /> */}
         </div>
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <MeasuresList />
+          <MeasuresList selectedUserId={selectedUserId} />
         </div>
       </div>
     </div>
   );
 };
-
 export default DashboardPage;
