@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Globe from '../Globe/Globe';
+import MapBoxComponent from '../MapBox/MapBox';
 
 const MapWidget = () => {
   const [view, setView] = useState('globe'); // 'globe' ou 'map'
@@ -33,13 +34,12 @@ const MapWidget = () => {
       </div>
 
       <div className="relative w-full h-[350px] md:h-[400px] lg:h-[450px] rounded-lg overflow-hidden bg-gray-100">
-        {view === 'globe' ? (
+        <div className="h-full w-full" style={{ display: view === 'globe' ? 'block' : 'none' }}>
           <Globe />
-        ) : (
-          <div className="flex items-center justify-center h-full w-full">
-            <p className="text-gray-500">Fonctionnalité MapBox à venir...</p>
-          </div>
-        )}
+        </div>
+        <div className="h-full w-full" style={{ display: view === 'map' ? 'block' : 'none' }}>
+          <MapBoxComponent />
+        </div>
       </div>
     </div>
   );

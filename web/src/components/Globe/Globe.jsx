@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useRef } from "react";
 import createGlobe from "cobe";
 
@@ -72,11 +73,12 @@ const transformUsersToMarkers = (users) => {
   return markers;
 };
 
-const Globe = ({ className }) => {
+const Globe = ({ className = '' }) => {
   const canvasRef = useRef(null);
   const pointerInteracting = useRef(null);
   const pointerInteractionMovement = useRef(0);
-  let phi = 0;
+  // Stocker phi dans un useRef pour conserver sa valeur entre les rendus
+  const phiRef = useRef(0);
 
   useEffect(() => {
     // Convertir les données utilisateurs en marqueurs
@@ -117,9 +119,9 @@ const Globe = ({ className }) => {
           onRender: (state) => {
             // Rotation automatique
             if (!pointerInteracting.current) {
-              phi += 0.008;
+              phiRef.current += 0.008;
             }
-            state.phi = phi;
+            state.phi = phiRef.current;
           }
         });
         
@@ -174,7 +176,7 @@ const Globe = ({ className }) => {
     if (pointerInteracting.current !== null) {
       const delta = e.clientX - pointerInteracting.current;
       pointerInteractionMovement.current = delta;
-      phi += delta / 200;
+      phiRef.current += delta / 200;
     }
   };
 

@@ -1,4 +1,4 @@
-import React from 'react';
+//import React from 'react';
 import MapWidget from '../MapWidget/MapWidget';
 
 // Composant Header avec des statistiques
