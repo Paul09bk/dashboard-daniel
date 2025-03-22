@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fetchSensors, fetchDetailedMeasures } from '../../services/apiService';
 
 const MeasuresList = ({ selectedUserId }) => {
@@ -6,6 +6,8 @@ const MeasuresList = ({ selectedUserId }) => {
   const [error, setError] = useState(null);
   const [userSensors, setUserSensors] = useState([]);
   const [measures, setMeasures] = useState([]);
+  const [sortField, setSortField] = useState('timestamp'); // Champ par défaut pour le tri
+  const [sortDirection, setSortDirection] = useState(-1); // -1 pour décroissant (plus récent d'abord)
 
   // Fetch sensors for selected user
   useEffect(() => {
@@ -87,6 +89,56 @@ const MeasuresList = ({ selectedUserId }) => {
     loadUserSensors();
   }, [selectedUserId]);
   
+  // Fonction pour changer le tri
+  const handleSort = (field) => {
+    // Si on clique sur la même colonne, inverser la direction
+    if (field === sortField) {
+      setSortDirection(sortDirection * -1);
+    } else {
+      // Sinon, définir le nouveau champ et réinitialiser la direction
+      setSortField(field);
+      // Par défaut, tri décroissant pour les dates, croissant pour le reste
+      setSortDirection(field === 'timestamp' ? -1 : 1);
+    }
+  };
+  
+  // Mesures triées selon les critères actuels
+  const sortedMeasures = useMemo(() => {
+    if (!measures.length) return [];
+    
+    return [...measures].sort((a, b) => {
+      let valueA, valueB;
+      
+      // Déterminer les valeurs à comparer en fonction du champ de tri
+      switch(sortField) {
+        case 'timestamp':
+          valueA = new Date(a.creationDate || a.timestamp || a.date || 0).getTime();
+          valueB = new Date(b.creationDate || b.timestamp || b.date || 0).getTime();
+          break;
+        case 'type':
+          valueA = (a.type || a.sensorType || '').toLowerCase();
+          valueB = (b.type || b.sensorType || '').toLowerCase();
+          break;
+        case 'location':
+          valueA = (a.sensorLocation || '').toLowerCase();
+          valueB = (b.sensorLocation || '').toLowerCase();
+          break;
+        case 'value':
+          valueA = parseFloat(a.value) || 0;
+          valueB = parseFloat(b.value) || 0;
+          break;
+        default:
+          valueA = a[sortField];
+          valueB = b[sortField];
+      }
+      
+      // Comparer en fonction de la direction
+      if (valueA < valueB) return -1 * sortDirection;
+      if (valueA > valueB) return 1 * sortDirection;
+      return 0;
+    });
+  }, [measures, sortField, sortDirection]);
+  
   // Format date pour affichage
   const formatDate = (dateString) => {
     if (!dateString) return 'Date inconnue';
@@ -134,6 +186,12 @@ const MeasuresList = ({ selectedUserId }) => {
     };
     
     return typeColorMap[type.toLowerCase()] || "bg-gray-100 text-gray-800 border-gray-200";
+  };
+
+  // Icône de tri pour les en-têtes
+  const SortIcon = ({ field }) => {
+    if (field !== sortField) return <span className="text-gray-300 ml-1">↕</span>;
+    return <span className="text-blue-500 ml-1">{sortDirection > 0 ? '↑' : '↓'}</span>;
   };
 
   // Rendez le contenu du tableau avec les nouvelles colonnes
@@ -204,14 +262,34 @@ const MeasuresList = ({ selectedUserId }) => {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="text-left p-2 text-sm font-medium text-gray-600">Date</th>
-                  <th className="text-left p-2 text-sm font-medium text-gray-600">Type de capteur</th>
-                  <th className="text-left p-2 text-sm font-medium text-gray-600">Lieu</th>
-                  <th className="text-right p-2 text-sm font-medium text-gray-600">Valeur</th>
+                  <th 
+                    className="text-left p-2 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('timestamp')}
+                  >
+                    Date <SortIcon field="timestamp" />
+                  </th>
+                  <th 
+                    className="text-left p-2 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('type')}
+                  >
+                    Type de capteur <SortIcon field="type" />
+                  </th>
+                  <th 
+                    className="text-left p-2 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('location')}
+                  >
+                    Lieu <SortIcon field="location" />
+                  </th>
+                  <th 
+                    className="text-right p-2 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('value')}
+                  >
+                    Valeur <SortIcon field="value" />
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {measures.map((measure, index) => renderMeasureRow(measure, index))}
+                {sortedMeasures.map((measure, index) => renderMeasureRow(measure, index))}
               </tbody>
             </table>
           </div>

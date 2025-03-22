@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
 import StatCard from '../components/dashboard/StatCard';
-import Map from '../components/dashboard/Map';
-// import Charts from '../components/dashboard/Charts';
 import UsersList from '../components/dashboard/UsersList';
 import MeasuresList from '../components/dashboard/MeasuresList';
 import MapWidget from '../components/MapWidget/MapWidget';
-// import { fetchDashboardData } from '../services/api';
+import { fetchDashboardStats } from '../services/apiService';
 
 const DashboardPage = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [dashboardData, setDashboardData] = useState({
-    capteurs: 500,
-    utilisateurs: 300,
+    capteurs: 0,
+    utilisateurs: 0,
     date: new Date().toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',
@@ -24,25 +22,22 @@ const DashboardPage = () => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
-        // Uncomment this when your API is ready
-        // const data = await fetchDashboardData();
-        // setDashboardData(data);
-        
-        // For now, we'll use mock data
-        setTimeout(() => {
-          setDashboardData({
-            capteurs: 500,
-            utilisateurs: 300,
-            date: new Date().toLocaleDateString('fr-FR', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            })
-          });
-          setLoading(false);
-        }, 500);
+        // Récupérer les statistiques réelles
+        const stats = await fetchDashboardStats();
+        setDashboardData(stats);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
+        // En cas d'erreur, utiliser des valeurs par défaut
+        setDashboardData({
+          capteurs: '?',
+          utilisateurs: '?',
+          date: new Date().toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          })
+        });
+      } finally {
         setLoading(false);
       }
     };
@@ -55,7 +50,12 @@ const DashboardPage = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading dashboard data...</div>;
+    return <div className="flex items-center justify-center h-screen">
+      <div>
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Chargement des données...</p>
+      </div>
+    </div>;
   }
 
   return (
@@ -88,4 +88,5 @@ const DashboardPage = () => {
     </div>
   );
 };
+
 export default DashboardPage;

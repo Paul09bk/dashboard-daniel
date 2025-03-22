@@ -89,6 +89,31 @@ export const fetchSensorLocations = async () => {
   }
 };
 
+// Nouvelle fonction pour récupérer les statistiques du dashboard
+export const fetchDashboardStats = async () => {
+  try {
+    // Récupérer à la fois les capteurs et les utilisateurs
+    const [sensors, users] = await Promise.all([
+      fetchSensors(),
+      fetchUsers()
+    ]);
+    
+    // Retourner les statistiques
+    return {
+      capteurs: sensors.length,
+      utilisateurs: users.length,
+      date: new Date().toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques du dashboard:', error);
+    throw error;
+  }
+};
+
 // Mise à jour de fetchDetailedMeasures
 export const fetchDetailedMeasures = async (sensorId) => {
   try {
