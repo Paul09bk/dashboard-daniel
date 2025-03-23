@@ -1,10 +1,14 @@
 // web/src/pages/admin.jsx
 import { useState, useEffect } from 'react';
-import DataTable from '../components/Admin/DataTable';
-import DataForm from '../components/Admin/DataForm';
+import DataTable from '../components/admin/AdminDataTable';
+import DataForm from '../components/admin/DataForm';
+import SensorForm from '../components/admin/SensorForm';
+import MeasureForm from '../components/admin/MeasureForm';
+import UserForm from '../components/admin/UserForm'; // Nouveau composant importé
 import UserDetail from '../components/admin/UserDetail';
 import SensorDetail from '../components/admin/SensorDetail';
 import AdminStatsDashboard from '../components/admin/AdminStatsDashboard';
+import DataRelationships from '../components/admin/DataRelationships';
 import { 
   fetchEntities, 
   createEntity, 
@@ -15,6 +19,7 @@ import {
 const AdminPage = () => {
   const [entities] = useState([
     { name: 'dashboard', label: 'Tableau de bord', apiEndpoint: null },
+    { name: 'relationships', label: 'Relations', apiEndpoint: null },
     { name: 'users', label: 'Utilisateurs', apiEndpoint: 'users' },
     { name: 'sensors', label: 'Capteurs', apiEndpoint: 'sensors' },
     { name: 'measures', label: 'Mesures', apiEndpoint: 'measures' }
@@ -34,17 +39,26 @@ const AdminPage = () => {
     users: [
       { key: 'location', label: 'Emplacement' },
       { key: 'personsInHouse', label: 'Personnes' },
-      { key: 'houseSize', label: 'Taille du logement' },
+      { key: 'houseSize', label: 'Taille du logement', render: (item) => {
+        const sizes = {
+          'small': 'Petite',
+          'medium': 'Moyenne',
+          'big': 'Grande'
+        };
+        return sizes[item.houseSize] || item.houseSize;
+      }},
       { key: 'createdAt', label: 'Date de création', render: (item) => 
         item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A' 
       }
     ],
     sensors: [
+      { key: 'type', label: 'Type' },
+      { key: 'model', label: 'Modèle' },
       { key: 'location', label: 'Emplacement' },
       { key: 'creationDate', label: 'Date d\'installation', render: (item) => 
         item.creationDate ? new Date(item.creationDate).toLocaleDateString() : 'N/A' 
       },
-      { key: 'userID', label: 'Utilisateur' }
+      { key: 'userId', label: 'Utilisateur' }
     ],
     measures: [
       { key: 'type', label: 'Type' },
@@ -58,7 +72,7 @@ const AdminPage = () => {
 
   // Chargement des données lors du changement d'entité active
   useEffect(() => {
-    if (activeEntity !== 'dashboard') {
+    if (activeEntity !== 'dashboard' && activeEntity !== 'relationships') {
       loadEntityData(activeEntity);
     } else {
       setLoading(false);
@@ -98,15 +112,33 @@ const AdminPage = () => {
 
   // Ajout d'un nouvel élément
   const handleAddNew = () => {
-    // Créer un nouvel élément vide avec les clés appropriées
-    const emptyItem = {};
-    entityColumns[activeEntity].forEach(col => {
-      if (col.key !== 'createdAt' && col.key !== 'updatedAt') {
-        emptyItem[col.key] = '';
-      }
-    });
+    // Initialiser différents types d'éléments avec des valeurs par défaut appropriées
+    if (activeEntity === 'sensors') {
+      setCurrentItem({});
+    } else if (activeEntity === 'users') {
+      setCurrentItem({
+        location: '',
+        personsInHouse: 1,
+        houseSize: 'small'
+      });
+    } else if (activeEntity === 'measures') {
+      setCurrentItem({
+        type: '',
+        value: '',
+        sensorID: '',
+        creationDate: new Date().toISOString().split('T')[0]
+      });
+    } else {
+      // Pour les autres entités, créer un élément vide générique
+      const emptyItem = {};
+      entityColumns[activeEntity].forEach(col => {
+        if (col.key !== 'createdAt' && col.key !== 'updatedAt') {
+          emptyItem[col.key] = '';
+        }
+      });
+      setCurrentItem(emptyItem);
+    }
     
-    setCurrentItem(emptyItem);
     setShowForm(true);
   };
 
@@ -206,6 +238,43 @@ const AdminPage = () => {
     setCurrentItem(null);
   };
 
+  // Déterminer quel formulaire afficher
+  const renderForm = () => {
+    if (activeEntity === 'sensors') {
+      return (
+        <SensorForm 
+          item={currentItem}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+        />
+      );
+    } else if (activeEntity === 'measures') {
+      return (
+        <MeasureForm 
+          item={currentItem}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+        />
+      );
+    } else if (activeEntity === 'users') {
+      return (
+        <UserForm 
+          item={currentItem}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+        />
+      );
+    } else {
+      return (
+        <DataForm 
+          item={currentItem} 
+          onSubmit={handleFormSubmit} 
+          onCancel={handleFormCancel} 
+        />
+      );
+    }
+  };
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="flex flex-col space-y-6">
@@ -229,18 +298,23 @@ const AdminPage = () => {
             <h1 className="text-xl font-bold text-gray-800">
               {entities.find(e => e.name === activeEntity)?.label || 'Données'} - Administration
             </h1>
-            <button 
-              onClick={handleAddNew} 
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
-            >
-              Ajouter
-            </button>
+            {activeEntity !== 'dashboard' && activeEntity !== 'relationships' && (
+              <button 
+                onClick={handleAddNew} 
+                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+              >
+                Ajouter
+              </button>
+            )}
           </div>
           
           {activeEntity === 'dashboard' ? (
             <div className="space-y-6">
-
               <AdminStatsDashboard />
+            </div>
+          ) : activeEntity === 'relationships' ? (
+            <div className="space-y-6">
+              <DataRelationships />
             </div>
           ) : loading ? (
             <div className="flex justify-center items-center h-64">
@@ -269,11 +343,7 @@ const AdminPage = () => {
               onBack={handleBackFromDetail} 
             />
           ) : showForm ? (
-            <DataForm 
-              item={currentItem} 
-              onSubmit={handleFormSubmit} 
-              onCancel={handleFormCancel} 
-            />
+            renderForm()
           ) : (
             <>
               <div className="mb-4 bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
